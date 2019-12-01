@@ -20,6 +20,7 @@ map.on("load", function() {
     .then(response => response.json())
     .then(curbLR => {
     console.log(curbLR)
+    var demoFeatures = curbLR.features.filter(feature => console.log(feature.properties.location.objectId))
       map.addLayer({
         id: "bays",
         type: "line",
@@ -36,6 +37,23 @@ map.on("load", function() {
           "line-width": 3
         }
       });
+
+    // map.addLayer({
+    //   id: "bays",
+    //     type: "line",
+    //     source: {
+    //       type: "geojson",
+    //       data: curbLR
+    //     },
+    //     layout: {
+    //       "line-join": "round",
+    //       "line-cap": "round"
+    //     },
+    //     paint: {
+    //       "line-color": "red",
+    //       "line-width": 5
+    //     }
+    // })
     });
 });
 
