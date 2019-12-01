@@ -1,3 +1,4 @@
 .ipynb_checkpoints/*
 resnet50_coco_best_v2.0.1.h5
-node_modules
+node_modules/*
+semantic/*

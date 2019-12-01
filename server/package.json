@@ -4,7 +4,9 @@
   "description": "For details of the event please visit [the ford hack website](https://www.fordkerbhack.com/)",
   "main": "test.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "node server/app.js",
+    "dev": "nodemon server/app.js"
   },
   "repository": {
     "type": "git",

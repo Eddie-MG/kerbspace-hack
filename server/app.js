@@ -4,6 +4,7 @@ const geolib = require("geolib");
 const childProcess = require("child_process");
 const fs = require('fs');
 const download = require('download');
+const path = require('path')
 
 
 const getFeedList = async () => {
@@ -44,6 +45,11 @@ const getTakenUpParkingSpaceInM = (featureCoordRange) => {
     }
   })
 };
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "..","public",'index.html'))
+})
+
 
 app.get('/api/feature/:featureid/space-probability', async (req, res) => {
   const {featureid} = req.params;
