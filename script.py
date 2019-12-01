@@ -1,1 +1,1 @@
-print("{\"cars\":6, \"minivans\":0}");
+print("{\"car\":6, \"truck\":0}");
