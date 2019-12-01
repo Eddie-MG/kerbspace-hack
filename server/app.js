@@ -16,7 +16,7 @@ const findFeed = (feedList) => {
   return feedList.filter(feed => feed.id === "JamCams_00001.09726")[0];
 }
 
-const findClosestFeed = (inputCoordRange, feedList, searchRadiusInM = 50) => {
+const findClosestFeed = (inputCoordRange, feedList, searchRadiusInM = 100) => {
   const centerCoords = geolib.getCenter(inputCoordRange);
   const closestfeedList = feedList.filter(feed => {
     const distanceBetweenInputAndCamera = geolib.getDistance({latitude: feed.lat, longitude:feed.lon}, centerCoords);
@@ -25,8 +25,13 @@ const findClosestFeed = (inputCoordRange, feedList, searchRadiusInM = 50) => {
   return closestfeedList[0];
 };
 
-const getFeatureCoordRange = async () => {
-  return [{ latitude: 51.6001, longitude: -0.01594 }, { latitude: 51.6006, longitude: -0.01594 }];
+const kerbdata = require("../public/kerbdata.json");
+const getFeatureCoordRange = (featureId) => {
+  const feature = kerbdata.features.filter(feature => feature.properties.location.objectId === featureId)[0];
+  const [featureStart, featureEnd] = feature.geometry.coordinates;
+  const coordRange = [{ latitude: featureStart[1], longitude: featureStart[0] }, { latitude: featureEnd[1], longitude: featureEnd[0] }];
+  return coordRange;
+  // return [{ latitude: 51.6001, longitude: -0.01594 }, { latitude: 51.6006, longitude: -0.01594 }];
 }
 
 const app = express();
@@ -46,6 +51,11 @@ const getTakenUpParkingSpaceInM = (featureCoordRange) => {
   })
 };
 
+app.use((req, res, next) => {
+  console.log(req.url);
+  next();
+})
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "..","public",'index.html'))
 })
@@ -56,23 +66,32 @@ app.get("/style.css", (req, res) => {
 
 app.get("/logic.js", (req, res) => {
   res.sendFile(path.join(__dirname, "..","public",'logic.js'))
+});
+
+app.get("/kerbdata.json", (req, res) => {
+  res.sendFile(path.join(__dirname, "..","public",'kerbdata.json'));
 })
 
 
 
+
 app.get('/api/feature/:featureid/space-probability', async (req, res) => {
-  const {featureid} = req.params;
-  const featureCoordRange = await getFeatureCoordRange(featureid);
-  const { body: allCameraFeeds} = await getFeedList();
-  const closestFeed = await findClosestFeed(featureCoordRange, allCameraFeeds);
-  const feedImageUrl = closestFeed.additionalProperties.filter(props => props.key === "imageUrl")[0].value;
-  const lengthOfFeature = geolib.getDistance(...featureCoordRange);
-  const isImageSaved = await download(feedImageUrl).then((data)=> fs.writeFileSync('road.jpg', data));
-  console.log(isImageSaved);
-  const spaceTakenUpInM = await getTakenUpParkingSpaceInM(featureCoordRange);
-  const remainingLengthInFeature = lengthOfFeature-spaceTakenUpInM;
-  const remainingSpaces = Math.floor(remainingLengthInFeature/4.5);
-  res.status(200).json({remainingSpaces, lengthOfFeature, spaceTakenUpInM});
+  const {featureid: featureId} = req.params;
+  console.log({featureId});
+  if(featureId === "demofeatureid-upper"){
+    const featureCoordRange = getFeatureCoordRange(featureId);
+    const { body: allCameraFeeds} = await getFeedList();
+    const closestFeed = await findClosestFeed(featureCoordRange, allCameraFeeds);
+    const feedImageUrl = closestFeed.additionalProperties.filter(props => props.key === "imageUrl")[0].value;
+    const lengthOfFeature = geolib.getDistance(...featureCoordRange);
+    const isImageSaved = await download(feedImageUrl).then((data)=> fs.writeFileSync('road.jpg', data));
+    const spaceTakenUpInM = await getTakenUpParkingSpaceInM(featureCoordRange);
+    const remainingLengthInFeature = lengthOfFeature-spaceTakenUpInM;
+    const remainingSpaces = Math.floor(remainingLengthInFeature/4.5);
+    return res.status(200).json({remainingSpaces, lengthOfFeature, spaceTakenUpInM});
+  } else {
+    return res.status(200).json({remainingSpaces: 2, lengthOfFeature: 10, spaceTakenUpInM: 2});
+  }
 })
 
 app.use((req,res) => {
