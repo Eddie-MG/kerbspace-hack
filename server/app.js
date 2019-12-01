@@ -39,10 +39,10 @@ const app = express();
 const getTakenUpParkingSpaceInM = (featureCoordRange) => {
   return new Promise((resolve, reject) => {
     try{
-      const pythonProcess = childProcess.spawn('python',["script.py"]);
+      const pythonProcess = childProcess.spawn('python3',["script.py"]);
       pythonProcess.stdout.on('data', (data) => {
-        const {cars, minivans} = JSON.parse(data);
-        const spaceTakenUpInM = cars * 4.5 + minivans * 6.7
+        const {car: carCount, truck: vanCount} = JSON.parse(data);
+        const spaceTakenUpInM = carCount * 4.5 + vanCount * 6.7
         resolve(spaceTakenUpInM)
       });
     } catch (err){
