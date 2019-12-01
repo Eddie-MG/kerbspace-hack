@@ -19,8 +19,9 @@ map.on("load", function() {
   )
     .then(response => response.json())
     .then(curbLR => {
-    console.log(curbLR)
-    var demoFeatures = curbLR.features.filter(feature => console.log(feature.properties.location.objectId))
+    var demoFeatures = curbLR.features.filter(feature => feature.properties.location.objectId.includes("demofeatureid"))
+    const nonDemoFeatures = curbLR.features.filter(feature => !feature.properties.location.objectId.includes("demofeatureid"));
+    curbLR.features = nonDemoFeatures;
       map.addLayer({
         id: "bays",
         type: "line",
@@ -34,55 +35,60 @@ map.on("load", function() {
         },
         paint: {
           "line-color": "#139DCD",
-          "line-width": 3
+          "line-width": 2
         }
       });
-
-    // map.addLayer({
-    //   id: "bays",
-    //     type: "line",
-    //     source: {
-    //       type: "geojson",
-    //       data: curbLR
-    //     },
-    //     layout: {
-    //       "line-join": "round",
-    //       "line-cap": "round"
-    //     },
-    //     paint: {
-    //       "line-color": "red",
-    //       "line-width": 5
-    //     }
-    // })
+    curbLR.features = demoFeatures;
+    map.addLayer({
+      id: "demobays",
+        type: "line",
+        source: {
+          type: "geojson",
+          data: curbLR
+        },
+        layout: {
+          "line-join": "round",
+          "line-cap": "round"
+        },
+        paint: {
+          "line-color": "red",
+          "line-width": 5
+        }
+    })
     });
 });
 
 // When a click event occurs on a feature in the places layer, open a popup at the
 // location of the feature, with description HTML from its properties.
-map.on('click', 'bays', function (e) {
+const makeRequest = (e) => {
   const featureId = JSON.parse(e.features[0].properties.location).objectId;
   var coordinates = e.features[0].geometry.coordinates.slice();
   const featureLong = coordinates[0][0];
   const featureLat = coordinates[0][1];
-  var description = e.features[0].properties.description;
-  description = "test";
   fetch("/api/feature/"+featureId+"/space-probability")
     .then(response => response.json())
     .then((spaceData) => {
-      console.log(spaceData);
+      const innerHtml = `<h2>Spaces remaining: ${spaceData.remainingSpaces}</h2>
+      <p>availability on arrival: ${(Number(spaceData.probabilityOfASpaceBeingAvailable)*100).toFixed(0)}%</p>`;
       new mapboxgl.Popup()
         .setLngLat([featureLong,featureLat])
-        .setHTML(description)
+        .setHTML(innerHtml)
         .addTo(map);
     })
-});
- 
-// Change the cursor to a pointer when the mouse is over the places layer.
+}
+map.on('click', 'bays', makeRequest);
+map.on("click", "demobays", makeRequest);
+
 map.on('mouseenter', 'bays', function () {
-map.getCanvas().style.cursor = 'pointer';
+  map.getCanvas().style.cursor = 'pointer';
 });
- 
-// Change it back to a pointer when it leaves.
-map.on('mouseleave', 'bays', function () {
-map.getCanvas().style.cursor = '';
+ map.on('mouseleave', 'bays', function () {
+  map.getCanvas().style.cursor = '';
+});
+
+map.on('mouseenter', 'demobays', function () {
+  map.getCanvas().style.cursor = 'pointer';
+});
+ map.on('mouseleave', 'demobays', function () {
+  map.getCanvas().style.cursor = '';
 });

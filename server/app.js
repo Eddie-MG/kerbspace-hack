@@ -73,13 +73,25 @@ app.get("/kerbdata.json", (req, res) => {
 })
 
 
+const calculateProbabilityForAvailableSpace = (coords , totalSpaces, spacesTaken) => {
+   return new Promise((resolve, reject) => {
+    try{
+      const pythonProcess = childProcess.spawn('python3',["probModel.py", coords.latitude, coords.longitude, totalSpaces, spacesTaken]);
+      pythonProcess.stdout.on('data', (data) => {
+        const probabilityForSpace = Number(data);
+        resolve(probabilityForSpace)
+      });
+    } catch (err){
+      resolve((totalSpaces-spacesTaken)/totalSpaces);
+    }
+  })
+};
 
 
 app.get('/api/feature/:featureid/space-probability', async (req, res) => {
   const {featureid: featureId} = req.params;
-  console.log({featureId});
-  if(featureId === "demofeatureid-upper"){
-    const featureCoordRange = getFeatureCoordRange(featureId);
+  const featureCoordRange = getFeatureCoordRange(featureId);
+  if(featureId === "demofeatureid-upper" || featureId === "demofeatureid-camden"){
     const { body: allCameraFeeds} = await getFeedList();
     const closestFeed = await findClosestFeed(featureCoordRange, allCameraFeeds);
     const feedImageUrl = closestFeed.additionalProperties.filter(props => props.key === "imageUrl")[0].value;
@@ -88,9 +100,14 @@ app.get('/api/feature/:featureid/space-probability', async (req, res) => {
     const spaceTakenUpInM = await getTakenUpParkingSpaceInM(featureCoordRange);
     const remainingLengthInFeature = lengthOfFeature-spaceTakenUpInM;
     const remainingSpaces = Math.floor(remainingLengthInFeature/4.5);
-    return res.status(200).json({remainingSpaces, lengthOfFeature, spaceTakenUpInM});
+    const totalSpaces = Math.floor(lengthOfFeature/4.5);
+    const spacesTaken = totalSpaces-remainingSpaces;
+    const probabilityOfASpaceBeingAvailable = await calculateProbabilityForAvailableSpace(featureCoordRange[0], totalSpaces, spacesTaken );
+    return res.status(200).json({probabilityOfASpaceBeingAvailable: probabilityOfASpaceBeingAvailable.toFixed(2), remainingSpaces});
   } else {
-    return res.status(200).json({remainingSpaces: 2, lengthOfFeature: 10, spaceTakenUpInM: 2});
+    const remainingSpaces = Math.floor(Math.random()*5);
+    const probabilityOfASpaceBeingAvailable = Math.random().toFixed(2);
+    return res.status(200).json({probabilityOfASpaceBeingAvailable, remainingSpaces });
   }
 })
 
