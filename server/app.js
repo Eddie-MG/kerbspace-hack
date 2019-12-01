@@ -50,6 +50,15 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "..","public",'index.html'))
 })
 
+app.get("/style.css", (req, res) => {
+  res.sendFile(path.join(__dirname, "..","public",'style.css'))
+})
+
+app.get("/logic.js", (req, res) => {
+  res.sendFile(path.join(__dirname, "..","public",'logic.js'))
+})
+
+
 
 app.get('/api/feature/:featureid/space-probability', async (req, res) => {
   const {featureid} = req.params;
