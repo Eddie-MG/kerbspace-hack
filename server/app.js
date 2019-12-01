@@ -31,7 +31,6 @@ const getFeatureCoordRange = (featureId) => {
   const [featureStart, featureEnd] = feature.geometry.coordinates;
   const coordRange = [{ latitude: featureStart[1], longitude: featureStart[0] }, { latitude: featureEnd[1], longitude: featureEnd[0] }];
   return coordRange;
-  // return [{ latitude: 51.6001, longitude: -0.01594 }, { latitude: 51.6006, longitude: -0.01594 }];
 }
 
 const app = express();
